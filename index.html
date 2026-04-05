@@ -53,6 +53,7 @@
   .map-tools { position: absolute; top: 10px; right: 10px; display: flex; flex-direction: column; gap: 6px; z-index: 500; }
   .map-tool-btn { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 7px 12px; font-size: 12px; cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,0.12); font-family: inherit; color: #333; }
   .map-tool-btn:hover { background: #f5f5f5; }
+  .progress { font-size: 12px; color: #1a6dff; margin-top: 4px; }
   ::-webkit-scrollbar { width: 5px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
@@ -62,7 +63,7 @@
 <header>
   <div class="logo">안전진단</div>
   <h1>위치도 생성기</h1>
-  <span>시설물 주소 입력 → 카카오맵 자동 표시 → 캡처</span>
+  <span>시설물 주소 입력 → 지도 자동 표시 → 캡처</span>
 </header>
 <div class="container">
   <div class="sidebar">
@@ -79,6 +80,7 @@
 영통고가차도	경기도 수원시 영통구 영통로 200"></textarea>
         <p class="hint">엑셀에서 두 열 드래그 → 복붙하면 탭으로 자동 구분</p>
         <p class="err" id="inputErr"></p>
+        <p class="progress" id="progress"></p>
       </div>
       <div class="section">
         <div class="section-title">표시 옵션</div>
@@ -111,8 +113,8 @@
         <div>
           <div style="font-size:12px;color:#666;margin-bottom:5px">지도 타입</div>
           <div class="opt-row" style="gap:14px">
-            <label><input type="radio" name="maptype" value="normal" checked> 일반</label>
-            <label><input type="radio" name="maptype" value="hybrid"> 스카이뷰+도로</label>
+            <label><input type="radio" name="maptype" value="roadmap" checked> 일반</label>
+            <label><input type="radio" name="maptype" value="hybrid"> 위성+도로</label>
           </div>
         </div>
       </div>
@@ -146,13 +148,14 @@
   </div>
 </div>
 
-<script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=44dcd38a363fa2dd7f233cf323e7f788&libraries=services"></script>
 <script>
+const GOOGLE_API_KEY = 'AIzaSyB-pnyR9yBSKufo4gTATW-qPGgrEnrS56g';
 let boxColor = '#1a6dff';
 let mapInstance = null;
 let overlays = [];
 let facilities = [];
 let geocoder = null;
+let currentMapType = 'roadmap';
 
 document.getElementById('boxSize').addEventListener('input', function(){
   document.getElementById('boxSizeVal').textContent = this.value + 'px';
@@ -166,7 +169,8 @@ document.querySelectorAll('input[name="label"]').forEach(r => {
 document.querySelectorAll('input[name="maptype"]').forEach(r => {
   r.addEventListener('change', function() {
     if(!mapInstance) return;
-    mapInstance.setMapTypeId(this.value === 'hybrid' ? kakao.maps.MapTypeId.HYBRID : kakao.maps.MapTypeId.ROADMAP);
+    mapInstance.setMapTypeId(this.value);
+    currentMapType = this.value;
   });
 });
 
@@ -201,8 +205,10 @@ function loadSample() {
 function clearAll() {
   document.getElementById('input').value = '';
   document.getElementById('inputErr').textContent = '';
+  document.getElementById('progress').textContent = '';
   facilities = [];
-  if(mapInstance) { overlays.forEach(o=>o.setMap(null)); overlays = []; }
+  overlays.forEach(o => o.setMap(null));
+  overlays = [];
   document.getElementById('listWrap').style.display = 'none';
   document.getElementById('mapTools').style.display = 'none';
   document.getElementById('map').style.display = 'none';
@@ -216,24 +222,52 @@ function getLabelText(f) {
   return f.num + '. ' + f.name;
 }
 
-function makeOverlayContent(f) {
+function makeOverlay(f) {
   const size = parseInt(document.getElementById('boxSize').value);
-  const half = Math.round(size / 2);
   const label = getLabelText(f);
-  return `<div style="width:${size}px;height:${size}px;border:2.5px solid ${boxColor};border-radius:3px;background:rgba(255,255,255,0.05);position:relative;transform:translate(-${half}px,-${half}px);pointer-events:none;">
-    <div style="position:absolute;bottom:-1px;left:50%;transform:translateX(-50%);background:${boxColor};color:#fff;font-size:10px;font-weight:700;font-family:'Malgun Gothic',sans-serif;padding:2px 6px;border-radius:0 0 2px 2px;white-space:nowrap;max-width:${size+80}px;overflow:hidden;text-overflow:ellipsis;">${label}</div>
-  </div>`;
+
+  class BoxOverlay extends google.maps.OverlayView {
+    constructor(pos, size, color, label) {
+      super();
+      this.pos = pos;
+      this.size = size;
+      this.color = color;
+      this.label = label;
+      this.div = null;
+    }
+    onAdd() {
+      const div = document.createElement('div');
+      div.style.cssText = `position:absolute;width:${this.size}px;height:${this.size}px;border:2.5px solid ${this.color};border-radius:3px;background:rgba(255,255,255,0.05);pointer-events:none;`;
+      const lbl = document.createElement('div');
+      lbl.style.cssText = `position:absolute;bottom:-1px;left:50%;transform:translateX(-50%);background:${this.color};color:#fff;font-size:10px;font-weight:700;font-family:'Malgun Gothic',sans-serif;padding:2px 6px;border-radius:0 0 2px 2px;white-space:nowrap;max-width:${this.size+80}px;overflow:hidden;text-overflow:ellipsis;`;
+      lbl.textContent = this.label;
+      div.appendChild(lbl);
+      this.div = div;
+      this.getPanes().overlayLayer.appendChild(div);
+    }
+    draw() {
+      const proj = this.getProjection();
+      const pt = proj.fromLatLngToDivPixel(this.pos);
+      const half = this.size / 2;
+      this.div.style.left = (pt.x - half) + 'px';
+      this.div.style.top = (pt.y - half) + 'px';
+    }
+    onRemove() {
+      if(this.div) { this.div.parentNode.removeChild(this.div); this.div = null; }
+    }
+  }
+
+  return new BoxOverlay(
+    new google.maps.LatLng(f.lat, f.lng),
+    size, boxColor, label
+  );
 }
 
 function redrawOverlays() {
   overlays.forEach(o => o.setMap(null));
   overlays = [];
   facilities.filter(f => f.found).forEach(f => {
-    const o = new kakao.maps.CustomOverlay({
-      position: new kakao.maps.LatLng(f.lat, f.lng),
-      content: makeOverlayContent(f),
-      zIndex: 3
-    });
+    const o = makeOverlay(f);
     o.setMap(mapInstance);
     overlays.push(o);
   });
@@ -243,25 +277,38 @@ function fitBounds() {
   if(!mapInstance) return;
   const found = facilities.filter(f => f.found);
   if(!found.length) return;
-  const bounds = new kakao.maps.LatLngBounds();
-  found.forEach(f => bounds.extend(new kakao.maps.LatLng(f.lat, f.lng)));
-  mapInstance.setBounds(bounds, 80);
+  const bounds = new google.maps.LatLngBounds();
+  found.forEach(f => bounds.extend({ lat: f.lat, lng: f.lng }));
+  mapInstance.fitBounds(bounds);
 }
 
 function toggleMapType() {
   if(!mapInstance) return;
-  const hybrid = document.querySelector('input[name="maptype"][value="hybrid"]');
-  const normal = document.querySelector('input[name="maptype"][value="normal"]');
-  if(hybrid.checked) {
-    mapInstance.setMapTypeId(kakao.maps.MapTypeId.ROADMAP);
-    normal.checked = true;
+  if(currentMapType === 'roadmap') {
+    mapInstance.setMapTypeId('hybrid');
+    currentMapType = 'hybrid';
+    document.querySelector('input[name="maptype"][value="hybrid"]').checked = true;
   } else {
-    mapInstance.setMapTypeId(kakao.maps.MapTypeId.HYBRID);
-    hybrid.checked = true;
+    mapInstance.setMapTypeId('roadmap');
+    currentMapType = 'roadmap';
+    document.querySelector('input[name="maptype"][value="roadmap"]').checked = true;
   }
 }
 
-function loadMap() {
+async function geocodeAddress(addr) {
+  const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(addr)}&key=${GOOGLE_API_KEY}&language=ko&region=KR`;
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    if(data.status === 'OK' && data.results.length > 0) {
+      const loc = data.results[0].geometry.location;
+      return { lat: loc.lat, lng: loc.lng };
+    }
+  } catch(e) {}
+  return null;
+}
+
+async function loadMap() {
   facilities = parseInput();
   if(!facilities.length) {
     document.getElementById('inputErr').textContent = '시설물 목록을 입력해주세요.';
@@ -272,45 +319,44 @@ function loadMap() {
   document.getElementById('map').style.display = 'block';
 
   if(!mapInstance) {
-    mapInstance = new kakao.maps.Map(document.getElementById('map'), {
-      center: new kakao.maps.LatLng(36.5, 127.5),
-      level: 12
+    mapInstance = new google.maps.Map(document.getElementById('map'), {
+      center: { lat: 36.5, lng: 127.5 },
+      zoom: 7,
+      mapTypeId: currentMapType,
+      mapTypeControl: false,
+      streetViewControl: false,
+      fullscreenControl: false
     });
-    geocoder = new kakao.maps.services.Geocoder();
   }
 
   overlays.forEach(o => o.setMap(null));
   overlays = [];
 
-  const bounds = new kakao.maps.LatLngBounds();
+  const prog = document.getElementById('progress');
   let done = 0;
+  const bounds = new google.maps.LatLngBounds();
 
-  const mt = document.querySelector('input[name="maptype"]:checked').value;
-  mapInstance.setMapTypeId(mt === 'hybrid' ? kakao.maps.MapTypeId.HYBRID : kakao.maps.MapTypeId.ROADMAP);
+  for(const f of facilities) {
+    prog.textContent = `주소 검색 중... ${done}/${facilities.length}`;
+    const result = await geocodeAddress(f.addr);
+    if(result) {
+      f.lat = result.lat;
+      f.lng = result.lng;
+      f.found = true;
+      bounds.extend({ lat: f.lat, lng: f.lng });
+      const o = makeOverlay(f);
+      o.setMap(mapInstance);
+      overlays.push(o);
+    } else {
+      f.found = false;
+    }
+    done++;
+  }
 
-  facilities.forEach(f => {
-    geocoder.addressSearch(f.addr, function(result, status) {
-      done++;
-      if(status === kakao.maps.services.Status.OK) {
-        f.lat = parseFloat(result[0].y);
-        f.lng = parseFloat(result[0].x);
-        f.found = true;
-        bounds.extend(new kakao.maps.LatLng(f.lat, f.lng));
-        const o = new kakao.maps.CustomOverlay({
-          position: new kakao.maps.LatLng(f.lat, f.lng),
-          content: makeOverlayContent(f),
-          zIndex: 3
-        });
-        o.setMap(mapInstance);
-        overlays.push(o);
-      }
-      if(done === facilities.length) {
-        if(facilities.filter(f=>f.found).length > 0) mapInstance.setBounds(bounds, 80);
-        document.getElementById('mapTools').style.display = 'flex';
-        renderList();
-      }
-    });
-  });
+  prog.textContent = `완료! ${facilities.filter(f=>f.found).length}/${facilities.length}개 표시됨`;
+  if(facilities.filter(f=>f.found).length > 0) mapInstance.fitBounds(bounds);
+  document.getElementById('mapTools').style.display = 'flex';
+  renderList();
 }
 
 function renderList() {
@@ -331,6 +377,9 @@ function renderList() {
 function showCaptureGuide() {
   alert('📷 지도 캡처 방법\n\nWin + Shift + S\n→ 지도 영역 드래그\n→ 파워포인트에 바로 붙여넣기\n\n또는 스니핑 도구 사용');
 }
+
+function initMap() {}
 </script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB-pnyR9yBSKufo4gTATW-qPGgrEnrS56g&callback=initMap&language=ko&region=KR" async defer></script>
 </body>
 </html>
