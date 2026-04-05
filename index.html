@@ -6,225 +6,82 @@
 <title>안전진단 위치도 생성기</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Malgun Gothic', sans-serif; background: #f4f4f0; color: #222; font-size: 14px; }
-
-  header {
-    background: #1a1a2e;
-    color: #fff;
-    padding: 16px 28px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-  header .logo {
-    background: #FFD600;
-    color: #1a1a2e;
-    font-weight: 700;
-    font-size: 13px;
-    padding: 4px 10px;
-    border-radius: 6px;
-  }
-  header h1 { font-size: 18px; font-weight: 600; }
-  header span { font-size: 13px; color: #aaa; margin-left: 8px; }
-
-  .container { display: flex; height: calc(100vh - 56px); }
-
-  .sidebar {
-    width: 340px;
-    min-width: 300px;
-    background: #fff;
-    border-right: 1px solid #e0e0d8;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
-
-  .sidebar-inner { flex: 1; overflow-y: auto; padding: 16px; }
-
-  .section { margin-bottom: 18px; }
-  .section-title {
-    font-size: 12px;
-    font-weight: 700;
-    color: #888;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    margin-bottom: 8px;
-  }
-
-  textarea {
-    width: 100%;
-    height: 180px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    padding: 10px;
-    font-size: 12px;
-    font-family: 'Consolas', monospace;
-    resize: vertical;
-    background: #fafaf8;
-    color: #222;
-    line-height: 1.6;
-  }
+  body { font-family: 'Malgun Gothic', sans-serif; background: #f4f4f0; color: #222; font-size: 14px; height: 100vh; overflow: hidden; }
+  header { background: #1a1a2e; color: #fff; padding: 12px 24px; display: flex; align-items: center; gap: 12px; height: 52px; }
+  header .logo { background: #FFD600; color: #1a1a2e; font-weight: 700; font-size: 12px; padding: 3px 10px; border-radius: 6px; }
+  header h1 { font-size: 17px; font-weight: 600; }
+  header span { font-size: 12px; color: #aaa; margin-left: 8px; }
+  .container { display: flex; height: calc(100vh - 52px); }
+  .sidebar { width: 320px; min-width: 280px; background: #fff; border-right: 1px solid #e0e0d8; display: flex; flex-direction: column; overflow: hidden; }
+  .sidebar-inner { flex: 1; overflow-y: auto; padding: 14px; }
+  .section { margin-bottom: 16px; }
+  .section-title { font-size: 11px; font-weight: 700; color: #888; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 8px; }
+  textarea { width: 100%; height: 200px; border: 1px solid #ddd; border-radius: 8px; padding: 10px; font-size: 12px; font-family: 'Consolas', monospace; resize: vertical; background: #fafaf8; color: #222; line-height: 1.6; }
   textarea:focus { outline: none; border-color: #1a6dff; }
-
-  input[type="text"], input[type="password"] {
-    width: 100%;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    padding: 8px 10px;
-    font-size: 13px;
-    background: #fafaf8;
-    color: #222;
-  }
-  input:focus { outline: none; border-color: #1a6dff; }
-
   .hint { font-size: 11px; color: #999; margin-top: 5px; line-height: 1.5; }
-  .err { font-size: 12px; color: #c0392b; margin-top: 5px; }
-
+  .err { font-size: 12px; color: #c0392b; margin-top: 5px; min-height: 16px; }
   .color-row { display: flex; gap: 8px; margin-top: 4px; flex-wrap: wrap; }
-  .color-dot {
-    width: 26px; height: 26px; border-radius: 6px;
-    cursor: pointer; border: 2px solid transparent;
-    transition: transform 0.1s;
-  }
-  .color-dot.active { border-color: #333; transform: scale(1.15); }
-
+  .color-dot { width: 24px; height: 24px; border-radius: 5px; cursor: pointer; border: 2px solid transparent; transition: transform 0.1s; }
+  .color-dot.active { border-color: #333; transform: scale(1.2); }
   .opt-row { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
-  .opt-row label { font-size: 13px; display: flex; align-items: center; gap: 4px; cursor: pointer; }
+  .opt-row label { font-size: 12px; display: flex; align-items: center; gap: 4px; cursor: pointer; }
   .opt-row input[type=range] { flex: 1; }
-  .opt-val { font-size: 13px; min-width: 36px; text-align: right; color: #555; }
-
-  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 0; }
-  .btn {
-    flex: 1;
-    padding: 9px 10px;
-    border-radius: 8px;
-    border: 1px solid #ddd;
-    background: #fff;
-    cursor: pointer;
-    font-size: 13px;
-    font-family: inherit;
-    color: #333;
-    transition: background 0.15s;
-    text-align: center;
-  }
+  .opt-val { font-size: 12px; min-width: 36px; text-align: right; color: #555; }
+  .sidebar-footer { padding: 12px 14px; border-top: 1px solid #e0e0d8; display: flex; flex-direction: column; gap: 8px; }
+  .btn-row { display: flex; gap: 8px; }
+  .btn { flex: 1; padding: 9px 8px; border-radius: 8px; border: 1px solid #ddd; background: #fff; cursor: pointer; font-size: 13px; font-family: inherit; color: #333; transition: background 0.15s; text-align: center; }
   .btn:hover { background: #f0f0ec; }
-  .btn.primary { background: #1a6dff; color: #fff; border-color: #1a6dff; }
+  .btn.primary { background: #1a6dff; color: #fff; border-color: #1a6dff; font-weight: 600; }
   .btn.primary:hover { background: #155ed4; }
   .btn.red { color: #c0392b; border-color: #f5c6c6; }
   .btn.red:hover { background: #fef0f0; }
-
-  .sidebar-footer {
-    padding: 12px 16px;
-    border-top: 1px solid #e0e0d8;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .list-wrap { border-top: 1px solid #e0e0d8; padding: 12px 16px; max-height: 220px; overflow-y: auto; }
-  .list-title { font-size: 12px; font-weight: 700; color: #888; margin-bottom: 8px; }
-  .fac-item {
-    display: flex; align-items: flex-start; gap: 8px;
-    padding: 7px 0; border-bottom: 1px solid #f0f0ec;
-    font-size: 12px;
-  }
+  .btn.full { width: 100%; flex: none; }
+  .list-wrap { border-top: 1px solid #e0e0d8; padding: 10px 14px; max-height: 220px; overflow-y: auto; }
+  .list-title { font-size: 11px; font-weight: 700; color: #888; margin-bottom: 8px; }
+  .fac-item { display: flex; align-items: flex-start; gap: 8px; padding: 6px 0; border-bottom: 1px solid #f0f0ec; font-size: 12px; }
   .fac-item:last-child { border-bottom: none; }
-  .fac-num {
-    width: 20px; height: 20px; border-radius: 4px;
-    background: #1a6dff; color: #fff;
-    font-size: 10px; font-weight: 700;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0; margin-top: 1px;
-  }
+  .fac-num { width: 20px; height: 20px; border-radius: 4px; color: #fff; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
   .fac-name { font-weight: 600; color: #222; }
   .fac-addr { color: #888; font-size: 11px; margin-top: 1px; }
-  .badge {
-    font-size: 10px; padding: 1px 6px; border-radius: 4px;
-    flex-shrink: 0; margin-top: 2px;
-  }
+  .badge { font-size: 10px; padding: 1px 6px; border-radius: 4px; flex-shrink: 0; margin-top: 2px; }
   .badge.ok { background: #e8f5e9; color: #2e7d32; }
   .badge.fail { background: #fef0f0; color: #c0392b; }
-
-  #mapWrap { flex: 1; position: relative; background: #e8e0d8; }
+  #mapWrap { flex: 1; position: relative; }
   #map { width: 100%; height: 100%; }
-
-  .map-placeholder {
-    position: absolute; inset: 0;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    gap: 12px; color: #aaa;
-  }
-  .map-placeholder svg { opacity: 0.4; }
-  .map-placeholder p { font-size: 14px; }
-
-  .map-tools {
-    position: absolute; top: 12px; right: 12px;
-    display: flex; flex-direction: column; gap: 6px; z-index: 10;
-  }
-  .map-tool-btn {
-    background: #fff; border: 1px solid #ddd;
-    border-radius: 8px; padding: 7px 12px;
-    font-size: 12px; cursor: pointer;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
-    font-family: inherit; color: #333;
-  }
+  .map-placeholder { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; color: #aaa; background: #f0ece4; z-index: 1000; }
+  .map-placeholder p { font-size: 14px; text-align: center; line-height: 1.7; }
+  .map-tools { position: absolute; top: 10px; right: 10px; display: flex; flex-direction: column; gap: 6px; z-index: 500; }
+  .map-tool-btn { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 7px 12px; font-size: 12px; cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,0.12); font-family: inherit; color: #333; }
   .map-tool-btn:hover { background: #f5f5f5; }
-
-  .api-notice {
-    background: #fff9e6; border: 1px solid #ffe08a;
-    border-radius: 8px; padding: 10px 12px;
-    font-size: 12px; color: #7a5c00; line-height: 1.6;
-    margin-bottom: 10px;
-  }
-  .api-notice a { color: #1a6dff; }
-
   ::-webkit-scrollbar { width: 5px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
 </style>
 </head>
 <body>
-
 <header>
   <div class="logo">안전진단</div>
   <h1>위치도 생성기</h1>
-  <span>시설물 주소 입력 → 지도 자동 표시 → 이미지 저장</span>
+  <span>시설물 주소 입력 → 카카오맵 자동 표시 → 캡처</span>
 </header>
-
 <div class="container">
   <div class="sidebar">
     <div class="sidebar-inner">
-
-      <div class="section">
-        <div class="section-title">카카오맵 API 키</div>
-        <div class="api-notice">
-          <b>최초 1회만 입력</b>하면 저장돼요.<br>
-          발급: <a href="https://developers.kakao.com" target="_blank">developers.kakao.com</a> → 내 애플리케이션 → 앱 만들기 → JavaScript 키<br>
-          플랫폼 등록: <b>Web → 사이트 도메인에 "file://" 추가</b>
-        </div>
-        <input type="password" id="apiKey" placeholder="카카오 JavaScript 앱 키 입력">
-        <p class="hint">입력 후 저장되어 다음에 자동으로 불러와요</p>
-        <p class="err" id="apiErr"></p>
-      </div>
-
       <div class="section">
         <div class="section-title">시설물 목록</div>
         <textarea id="input" placeholder="엑셀에서 시설물명·주소 두 열 복붙하거나 직접 입력:
 
-시설물명[탭]주소
 시설물명[탭]주소
 
 예시)
 매교역 1번출구	경기도 수원시 팔달구 매산로 지하 1
 수원천 교량	경기도 수원시 팔달구 수원천로 11
 영통고가차도	경기도 수원시 영통구 영통로 200"></textarea>
-        <p class="hint">엑셀에서 두 열 드래그 → 복붙하면 탭으로 자동 구분돼요</p>
+        <p class="hint">엑셀에서 두 열 드래그 → 복붙하면 탭으로 자동 구분</p>
         <p class="err" id="inputErr"></p>
       </div>
-
       <div class="section">
         <div class="section-title">표시 옵션</div>
-
         <div style="margin-bottom:10px">
           <div style="font-size:12px;color:#666;margin-bottom:5px">박스 색상</div>
           <div class="color-row" id="colorPicker">
@@ -236,7 +93,6 @@
             <div class="color-dot" data-c="#2c3e50" style="background:#2c3e50"></div>
           </div>
         </div>
-
         <div style="margin-bottom:10px">
           <div style="font-size:12px;color:#666;margin-bottom:5px">박스 크기</div>
           <div class="opt-row">
@@ -244,7 +100,6 @@
             <span class="opt-val" id="boxSizeVal">80px</span>
           </div>
         </div>
-
         <div style="margin-bottom:10px">
           <div style="font-size:12px;color:#666;margin-bottom:5px">라벨 표시</div>
           <div class="opt-row" style="gap:14px">
@@ -253,7 +108,6 @@
             <label><input type="radio" name="label" value="both"> 번호+이름</label>
           </div>
         </div>
-
         <div>
           <div style="font-size:12px;color:#666;margin-bottom:5px">지도 타입</div>
           <div class="opt-row" style="gap:14px">
@@ -262,53 +116,43 @@
           </div>
         </div>
       </div>
-
     </div>
-
     <div class="sidebar-footer">
       <div class="btn-row">
         <button class="btn primary" onclick="loadMap()">🗺 지도에 표시</button>
         <button class="btn" onclick="loadSample()">샘플</button>
         <button class="btn red" onclick="clearAll()">초기화</button>
       </div>
-      <button class="btn" onclick="captureMap()" style="width:100%">📷 지도 캡처 방법 안내</button>
+      <button class="btn full" onclick="fitBounds()">📍 전체 보기</button>
+      <button class="btn full" onclick="showCaptureGuide()">📷 캡처 방법 안내</button>
     </div>
-
     <div class="list-wrap" id="listWrap" style="display:none">
       <div class="list-title">시설물 목록 <span id="listCount"></span></div>
       <div id="listItems"></div>
     </div>
   </div>
-
   <div id="mapWrap">
     <div class="map-placeholder" id="placeholder">
       <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#bbb" stroke-width="1.2">
         <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
         <circle cx="12" cy="9" r="2.5"/>
       </svg>
-      <p>API 키와 시설물 목록 입력 후<br>"지도에 표시" 클릭</p>
+      <p>시설물 목록 입력 후<br>"지도에 표시" 클릭</p>
     </div>
-    <div id="map" style="display:none"></div>
+    <div id="map" style="display:none;width:100%;height:100%"></div>
     <div class="map-tools" id="mapTools" style="display:none">
-      <button class="map-tool-btn" onclick="zoomFit()">📍 전체 보기</button>
-      <button class="map-tool-btn" onclick="toggleMapType()">🛰 위성/일반</button>
+      <button class="map-tool-btn" onclick="toggleMapType()">🛰 위성/일반 전환</button>
     </div>
   </div>
 </div>
 
+<script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=44dcd38a363fa2dd7f233cf323e7f788&libraries=services"></script>
 <script>
 let boxColor = '#1a6dff';
 let mapInstance = null;
 let overlays = [];
 let facilities = [];
 let geocoder = null;
-let currentMapType = 'normal';
-
-// API 키 로컬 저장
-window.onload = function() {
-  const saved = localStorage.getItem('kakao_api_key');
-  if(saved) document.getElementById('apiKey').value = saved;
-};
 
 document.getElementById('boxSize').addEventListener('input', function(){
   document.getElementById('boxSizeVal').textContent = this.value + 'px';
@@ -322,11 +166,7 @@ document.querySelectorAll('input[name="label"]').forEach(r => {
 document.querySelectorAll('input[name="maptype"]').forEach(r => {
   r.addEventListener('change', function() {
     if(!mapInstance) return;
-    if(this.value === 'hybrid') {
-      mapInstance.setMapTypeId(kakao.maps.MapTypeId.HYBRID);
-    } else {
-      mapInstance.setMapTypeId(kakao.maps.MapTypeId.ROADMAP);
-    }
+    mapInstance.setMapTypeId(this.value === 'hybrid' ? kakao.maps.MapTypeId.HYBRID : kakao.maps.MapTypeId.ROADMAP);
   });
 });
 
@@ -342,14 +182,11 @@ document.getElementById('colorPicker').addEventListener('click', function(e) {
 function parseInput() {
   const raw = document.getElementById('input').value.trim();
   if(!raw) return [];
-  return raw.split('\n')
-    .filter(l => l.trim())
-    .map((line, i) => {
-      const parts = line.includes('\t') ? line.split('\t') : line.split(',');
-      if(parts.length < 2) return null;
-      return { num: i+1, name: parts[0].trim(), addr: parts.slice(1).join(',').trim(), found: false };
-    })
-    .filter(Boolean);
+  return raw.split('\n').filter(l => l.trim()).map((line, i) => {
+    const parts = line.includes('\t') ? line.split('\t') : line.split(',');
+    if(parts.length < 2) return null;
+    return { num: i+1, name: parts[0].trim(), addr: parts.slice(1).join(',').trim(), found: false };
+  }).filter(Boolean);
 }
 
 function loadSample() {
@@ -364,7 +201,6 @@ function loadSample() {
 function clearAll() {
   document.getElementById('input').value = '';
   document.getElementById('inputErr').textContent = '';
-  document.getElementById('apiErr').textContent = '';
   facilities = [];
   if(mapInstance) { overlays.forEach(o=>o.setMap(null)); overlays = []; }
   document.getElementById('listWrap').style.display = 'none';
@@ -384,33 +220,8 @@ function makeOverlayContent(f) {
   const size = parseInt(document.getElementById('boxSize').value);
   const half = Math.round(size / 2);
   const label = getLabelText(f);
-  return `<div style="
-    position:relative;
-    width:${size}px;
-    height:${size}px;
-    border:2.5px solid ${boxColor};
-    border-radius:3px;
-    background:rgba(255,255,255,0.08);
-    transform:translate(-${half}px,-${half}px);
-    pointer-events:none;
-  ">
-    <div style="
-      position:absolute;
-      bottom:-1px;
-      left:50%;
-      transform:translateX(-50%);
-      background:${boxColor};
-      color:#fff;
-      font-size:10px;
-      font-weight:700;
-      font-family:'Malgun Gothic',sans-serif;
-      padding:2px 6px;
-      border-radius:0 0 2px 2px;
-      white-space:nowrap;
-      max-width:${size+60}px;
-      overflow:hidden;
-      text-overflow:ellipsis;
-    ">${label}</div>
+  return `<div style="width:${size}px;height:${size}px;border:2.5px solid ${boxColor};border-radius:3px;background:rgba(255,255,255,0.05);position:relative;transform:translate(-${half}px,-${half}px);pointer-events:none;">
+    <div style="position:absolute;bottom:-1px;left:50%;transform:translateX(-50%);background:${boxColor};color:#fff;font-size:10px;font-weight:700;font-family:'Malgun Gothic',sans-serif;padding:2px 6px;border-radius:0 0 2px 2px;white-space:nowrap;max-width:${size+80}px;overflow:hidden;text-overflow:ellipsis;">${label}</div>
   </div>`;
 }
 
@@ -418,20 +229,22 @@ function redrawOverlays() {
   overlays.forEach(o => o.setMap(null));
   overlays = [];
   facilities.filter(f => f.found).forEach(f => {
-    const overlay = new kakao.maps.CustomOverlay({
+    const o = new kakao.maps.CustomOverlay({
       position: new kakao.maps.LatLng(f.lat, f.lng),
       content: makeOverlayContent(f),
       zIndex: 3
     });
-    overlay.setMap(mapInstance);
-    overlays.push(overlay);
+    o.setMap(mapInstance);
+    overlays.push(o);
   });
 }
 
-function zoomFit() {
-  if(!mapInstance || !facilities.length) return;
+function fitBounds() {
+  if(!mapInstance) return;
+  const found = facilities.filter(f => f.found);
+  if(!found.length) return;
   const bounds = new kakao.maps.LatLngBounds();
-  facilities.filter(f=>f.found).forEach(f => bounds.extend(new kakao.maps.LatLng(f.lat, f.lng)));
+  found.forEach(f => bounds.extend(new kakao.maps.LatLng(f.lat, f.lng)));
   mapInstance.setBounds(bounds, 80);
 }
 
@@ -439,70 +252,41 @@ function toggleMapType() {
   if(!mapInstance) return;
   const hybrid = document.querySelector('input[name="maptype"][value="hybrid"]');
   const normal = document.querySelector('input[name="maptype"][value="normal"]');
-  if(currentMapType === 'normal') {
-    mapInstance.setMapTypeId(kakao.maps.MapTypeId.HYBRID);
-    currentMapType = 'hybrid';
-    hybrid.checked = true;
-  } else {
+  if(hybrid.checked) {
     mapInstance.setMapTypeId(kakao.maps.MapTypeId.ROADMAP);
-    currentMapType = 'normal';
     normal.checked = true;
+  } else {
+    mapInstance.setMapTypeId(kakao.maps.MapTypeId.HYBRID);
+    hybrid.checked = true;
   }
 }
 
 function loadMap() {
-  const apiKey = document.getElementById('apiKey').value.trim();
-  if(!apiKey) {
-    document.getElementById('apiErr').textContent = '44dcd38a363fa2dd7f233cf323e7f788';
-    return;
-  }
-  localStorage.setItem('kakao_api_key', apiKey);
-  document.getElementById('apiErr').textContent = '';
-
   facilities = parseInput();
   if(!facilities.length) {
     document.getElementById('inputErr').textContent = '시설물 목록을 입력해주세요.';
     return;
   }
   document.getElementById('inputErr').textContent = '';
-
   document.getElementById('placeholder').style.display = 'none';
   document.getElementById('map').style.display = 'block';
 
-  if(window.kakao && window.kakao.maps) {
-    initMap();
-    return;
-  }
-
-  const script = document.createElement('script');
-  script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${apiKey}&libraries=services&autoload=false`;
-  script.onload = () => kakao.maps.load(initMap);
-  script.onerror = () => {
-    document.getElementById('apiErr').textContent = 'API 키 오류 또는 도메인 미등록. developers.kakao.com에서 플랫폼 → Web → "file://" 추가 필요';
-    document.getElementById('placeholder').style.display = 'flex';
-    document.getElementById('map').style.display = 'none';
-  };
-  document.head.appendChild(script);
-}
-
-function initMap() {
-  const mapDiv = document.getElementById('map');
-  if(mapInstance) {
-    overlays.forEach(o=>o.setMap(null));
-    overlays = [];
-  } else {
-    mapInstance = new kakao.maps.Map(mapDiv, {
+  if(!mapInstance) {
+    mapInstance = new kakao.maps.Map(document.getElementById('map'), {
       center: new kakao.maps.LatLng(36.5, 127.5),
       level: 12
     });
+    geocoder = new kakao.maps.services.Geocoder();
   }
+
+  overlays.forEach(o => o.setMap(null));
+  overlays = [];
+
+  const bounds = new kakao.maps.LatLngBounds();
+  let done = 0;
 
   const mt = document.querySelector('input[name="maptype"]:checked').value;
   mapInstance.setMapTypeId(mt === 'hybrid' ? kakao.maps.MapTypeId.HYBRID : kakao.maps.MapTypeId.ROADMAP);
-
-  geocoder = new kakao.maps.services.Geocoder();
-  const bounds = new kakao.maps.LatLngBounds();
-  let done = 0;
 
   facilities.forEach(f => {
     geocoder.addressSearch(f.addr, function(result, status) {
@@ -512,17 +296,16 @@ function initMap() {
         f.lng = parseFloat(result[0].x);
         f.found = true;
         bounds.extend(new kakao.maps.LatLng(f.lat, f.lng));
-        const overlay = new kakao.maps.CustomOverlay({
+        const o = new kakao.maps.CustomOverlay({
           position: new kakao.maps.LatLng(f.lat, f.lng),
           content: makeOverlayContent(f),
           zIndex: 3
         });
-        overlay.setMap(mapInstance);
-        overlays.push(overlay);
+        o.setMap(mapInstance);
+        overlays.push(o);
       }
       if(done === facilities.length) {
-        const found = facilities.filter(f=>f.found);
-        if(found.length > 0) mapInstance.setBounds(bounds, 80);
+        if(facilities.filter(f=>f.found).length > 0) mapInstance.setBounds(bounds, 80);
         document.getElementById('mapTools').style.display = 'flex';
         renderList();
       }
@@ -531,8 +314,7 @@ function initMap() {
 }
 
 function renderList() {
-  const wrap = document.getElementById('listWrap');
-  wrap.style.display = 'block';
+  document.getElementById('listWrap').style.display = 'block';
   document.getElementById('listCount').textContent = `(${facilities.length}개)`;
   document.getElementById('listItems').innerHTML = facilities.map(f => `
     <div class="fac-item">
@@ -546,15 +328,8 @@ function renderList() {
   `).join('');
 }
 
-function captureMap() {
-  alert(
-    '📷 지도 캡처 방법\n\n' +
-    '방법 1 (추천): Win + Shift + S\n' +
-    '  → 화면 일부 선택 → 클립보드에 복사\n' +
-    '  → 파워포인트/워드에 바로 붙여넣기\n\n' +
-    '방법 2: 스니핑 도구 (시작 메뉴에서 검색)\n\n' +
-    '방법 3: Print Screen → 그림판에서 붙여넣기 → 저장'
-  );
+function showCaptureGuide() {
+  alert('📷 지도 캡처 방법\n\nWin + Shift + S\n→ 지도 영역 드래그\n→ 파워포인트에 바로 붙여넣기\n\n또는 스니핑 도구 사용');
 }
 </script>
 </body>
